@@ -55,6 +55,8 @@ class DrupalValetDriver extends ValetDriver
           $_GET['q'] = $uri;
         }
 
+        $_SERVER['DOCUMENT_ROOT'] = $sitePath;
+
         $matches = [];
         if (preg_match('/^\/(.*?)\.php/', $uri, $matches)) {
             $filename = $matches[0];
