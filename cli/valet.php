@@ -76,6 +76,9 @@ if (is_dir(VALET_HOME_PATH)) {
 
         Configuration::updateKey('domain', $domain);
 
+        // Run nginx install to set service domains again.
+        Nginx::installServer();
+
         Site::resecureForNewDomain($oldDomain, $domain);
         PhpFpm::restart();
         Nginx::restart();
