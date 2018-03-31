@@ -12,12 +12,12 @@ class DrupalValetDriver extends ValetDriver
      */
     public function serves($sitePath, $siteName, $uri)
     {
-      /**
-       * /misc/drupal.js = Drupal 7
-       * /core/lib/Drupal.php = Drupal 8
-       */
-      if (file_exists($sitePath.'/misc/drupal.js') ||
-          file_exists($sitePath.'/core/lib/Drupal.php')) {
+        /**
+         * /misc/drupal.js = Drupal 7
+         * /core/lib/Drupal.php = Drupal 8
+         */
+        if (file_exists($sitePath.'/misc/drupal.js') ||
+            file_exists($sitePath.'/core/lib/Drupal.php')) {
             return true;
         }
     }
@@ -51,9 +51,11 @@ class DrupalValetDriver extends ValetDriver
      */
     public function frontControllerPath($sitePath, $siteName, $uri)
     {
-        if (!empty($uri) && $uri !== '/') {
-          $_GET['q'] = $uri;
+        if (isset( $_GET['q']) === false && !empty($uri) && $uri !== '/') {
+            $_GET['q'] = $uri;
         }
+
+        $_SERVER['DOCUMENT_ROOT'] = $sitePath;
 
         $matches = [];
         if (preg_match('/^\/(.*?)\.php/', $uri, $matches)) {
@@ -68,6 +70,58 @@ class DrupalValetDriver extends ValetDriver
         // Fallback
         $_SERVER['SCRIPT_FILENAME'] = $sitePath.'/index.php';
         $_SERVER['SCRIPT_NAME'] = '/index.php';
-        return $sitePath.'/index.php';
+
+        // Check for multisite folder structure
+        if (file_exists($sitePath . '/sites/sites.php')) {
+            include $sitePath . '/sites/sites.php';
+
+            if (!isset($sites)) {
+                return $sitePath . '/index.php';
+            }
+
+            $sites = array_keys($sites);
+            $urlPath = $siteName . '.' . $GLOBALS['valetConfig']['domain'];
+            $subfolder = explode('/', $uri)[1];
+            $isInUrlPath = in_array($urlPath, $sites);
+            $isInSubFolderPath = in_array($subfolder, $sites);
+
+
+            if ($isInUrlPath === false && $isInSubFolderPath === false) {
+                return $sitePath . '/index.php';
+            }
+
+            if($isInSubFolderPath){
+                $this->forceTrailingSlash($uri);
+            }
+
+            $subfolder = '/' . explode('/', $uri)[1];
+
+            if ($isInSubFolderPath) {
+                $_SERVER['SCRIPT_NAME'] = $subfolder . '/index.php';
+                $_SERVER['PHP_SELF'] = $_SERVER['SCRIPT_NAME'];
+            }
+
+            $_SERVER['SCRIPT_FILENAME'] = $sitePath . $subfolder . '/index.php';
+            unset($_SERVER['DOCUMENT_URI']);
+        }
+
+        return $sitePath . '/index.php';
+    }
+
+
+    /**
+     * Redirect to uri with trailing slash.
+     *
+     * @param  string $uri
+     * @return string
+     */
+    private function forceTrailingSlash($uri)
+    {
+        if (substr($uri, -1) !== '/') {
+            header('Location: ' . $uri . '/');
+            die;
+        }
+
+        return $uri;
     }
 }

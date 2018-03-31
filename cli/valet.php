@@ -76,6 +76,9 @@ if (is_dir(VALET_HOME_PATH)) {
 
         Configuration::updateKey('domain', $domain);
 
+        // Run nginx install to set service domains again.
+        Nginx::installServer();
+
         Site::resecureForNewDomain($oldDomain, $domain);
         PhpFpm::restart();
         Nginx::restart();
@@ -105,7 +108,7 @@ if (is_dir(VALET_HOME_PATH)) {
      * Register a symbolic link with Valet.
      */
     $app->command('link [name] [--secure]', function ($name, $secure) {
-        $domain = Site::link(getcwd(), $name = $name ?: basename(getcwd()));
+        $domain = Site::link(exec("pwd"), $name = $name ?: basename(getcwd()));
 
         if ($secure) {
             $this->runCommand('secure '.$name);
@@ -680,6 +683,18 @@ if (is_dir(VALET_HOME_PATH)) {
     $app->command('ssh-key', function () {
         DevTools::sshkey();
     })->descriptions('Copy ssh key');
+
+    $app->command('drupal unlock [site]', function ($site) {
+        if ($site === null) {
+            $site = 'default';
+        }
+
+        Drupal::unlock($site);
+    })->descriptions('Unlock the drupal sites/{site}');
+
+    $app->command('log [filename]', function ($filename) {
+        Log::log($filename);
+    })->descriptions('Print valet-plus logs, use without filename for a list of logs.');
 }
 
 /**
