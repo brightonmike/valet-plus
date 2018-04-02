@@ -7,6 +7,16 @@ use DomainException;
 
 class Brew
 {
+    const PHP_V56_FORMULAE = 'php@5.6';
+    const PHP_V71_FORMULAE = 'php@7.1';
+    const PHP_V72_FORMULAE = 'php@7.2';
+
+    const SUPPORTED_PHP_FORMULAE = [
+        self::PHP_V56_FORMULAE,
+        self::PHP_V71_FORMULAE,
+        self::PHP_V72_FORMULAE
+    ];
+
     var $cli, $files;
 
     /**
@@ -39,9 +49,8 @@ class Brew
      */
     function hasInstalledPhp()
     {
-        $versions = $this->supportedPhpVersions();
-        foreach($versions as $version) {
-            if($this->installed($version)) {
+        foreach (Brew::SUPPORTED_PHP_FORMULAE as $version) {
+            if ($this->installed($version)) {
                 return true;
             }
         }
@@ -177,16 +186,17 @@ class Brew
      */
     function linkedPhp()
     {
-        if (! $this->files->isLink('/usr/local/bin/php')) {
+        if (!$this->files->isLink('/usr/local/bin/php')) {
             throw new DomainException("Unable to determine linked PHP.");
         }
 
         $resolvedPath = $this->files->readLink('/usr/local/bin/php');
 
-        $versions = $this->supportedPhpVersions();
+        $versions = self::SUPPORTED_PHP_FORMULAE;
 
-        foreach($versions as $version) {
-            if(strpos($resolvedPath, $version) !== false) {
+        foreach ($versions as $version) {
+            $version = str_replace('php@', '', $version);
+            if (strpos($resolvedPath, $version) !== false) {
                 return $version;
             }
         }

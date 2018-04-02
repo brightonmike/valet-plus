@@ -8,9 +8,7 @@ class PhpFpm
 {
     var $brew, $cli, $files;
 
-    var $taps = [
-        'homebrew/homebrew-php'
-    ];
+    const DEPRECATED_PHP_TAP = 'homebrew/php';
 
     /**
      * Create a new PHP FPM class instance.
@@ -34,12 +32,12 @@ class PhpFpm
     function install()
     {
         if (! $this->brew->hasInstalledPhp()) {
-            $this->brew->ensureInstalled('php70', [], $this->taps);
+            $this->brew->ensureInstalled(Brew::PHP_V71_FORMULAE);
         }
 
         $this->files->ensureDirExists('/usr/local/var/log', user());
         $this->updateConfiguration();
-        $this->installExtensions();
+//        $this->installExtensions();
         $this->restart();
     }
 
@@ -111,41 +109,12 @@ class PhpFpm
     function fpmConfigPath()
     {
         $confLookup = [
-            'php72' => '/usr/local/etc/php/7.2/php-fpm.d/www.conf',
-            'php71' => '/usr/local/etc/php/7.1/php-fpm.d/www.conf',
-            'php70' => '/usr/local/etc/php/7.0/php-fpm.d/www.conf',
-            'php56' => '/usr/local/etc/php/5.6/php-fpm.conf',
+            $this->sanitizeVersion(Brew::PHP_V72_FORMULAE) => '/usr/local/etc/php/7.2/php-fpm.d/www.conf',
+            $this->sanitizeVersion(Brew::PHP_V71_FORMULAE) => '/usr/local/etc/php/7.1/php-fpm.d/www.conf',
+            $this->sanitizeVersion(Brew::PHP_V56_FORMULAE) => '/usr/local/etc/php/5.6/php-fpm.conf',
         ];
 
         return $confLookup[$this->brew->linkedPhp()];
-    }
-
-    function getExtensions() {
-        return ['apcu', 'intl', 'mcrypt', 'opcache', 'geoip'];
-    }
-
-    function installExtensions() {
-        $extensions = $this->getExtensions();
-        $currentVersion = $this->brew->linkedPhp();
-        info('['.$currentVersion.'] Installing extensions');
-
-        foreach($extensions as $extension) {
-            if('php72' == $currentVersion && 'mcrypt' == $extension) {
-                info('['.$currentVersion.'] mcrypt extension (not supported in php72)');
-                continue;
-            }
-            if($this->brew->installed($currentVersion.'-'.$extension)) {
-                // Intl breaks often when switching versions
-                if($extension === 'intl') {
-                    $this->cli->runAsUser('brew upgrade '. $currentVersion . '-' . $extension);
-                }
-
-                $this->cli->runAsUser('brew link '. $currentVersion . '-' . $extension);
-                info('['.$currentVersion.'] '.$extension.' already installed');
-            } else {
-                $this->brew->ensureInstalled($currentVersion.'-'.$extension, [], $this->taps);
-            }
-        }
     }
 
     /**
@@ -155,33 +124,25 @@ class PhpFpm
      */
     function switchTo($version)
     {
-        $version = preg_replace('/[.]/','',$version);
-        $versions = ['72', '71', '70', '56'];
-        $extensions = $this->getExtensions();
+        $versions = $this->sanitizeVersion(Brew::SUPPORTED_PHP_FORMULAE);
         $currentVersion = $this->brew->linkedPhp();
 
-        if('php'.$version === $currentVersion) {
-            return false;
-        }
-
-        if (!in_array($version, $versions)) {
+        if(!in_array($version, $versions)){
             throw new DomainException("This version of PHP not available. The following versions are available: " . implode(' ', $versions));
         }
 
-        $this->cli->passthru('brew unlink '. $currentVersion);
+        if ($version === $currentVersion) {
+            return false;
+        }
+
+        $this->cli->passthru('brew unlink php@' . $currentVersion);
         $this->cli->passthru('sudo ln -s /usr/local/Cellar/jpeg/8d/lib/libjpeg.8.dylib /usr/local/opt/jpeg/lib/libjpeg.8.dylib');
 
-        foreach($versions as $phpversion) {
-            foreach($extensions as $extension) {
-                $this->cli->runAsUser('brew unlink php'.$phpversion.'-'.$extension);
-            }
+        if (!$this->brew->installed('php@' . $version)) {
+            $this->brew->ensureInstalled('php@' . $version, ['--force']);
         }
 
-        if (!$this->brew->installed('php'.$version)) {
-            $this->brew->ensureInstalled('php'.$version);
-        }
-
-        $this->cli->passthru('brew link php'.$version);
+        $this->cli->passthru('brew link php@' . $version.' --force');
         $this->stop();
         $this->install();
         return true;
@@ -263,5 +224,46 @@ class PhpFpm
         }
         warning('Cannot find z-performance.ini, please re-install Valet+');
         return false;
+    }
+
+    /**
+     * Fixes common problems with php installations from Homebrew.
+     */
+    function fix(){
+        $deprecatedVersions = ['56', '70', '71', '72'];
+        $deprecatedExtensions = ['apcu', 'intl', 'mcrypt'];
+
+        foreach($deprecatedVersions as $phpversion) {
+            info('[php '.$phpversion.'] Disabling modules: ');
+            foreach($deprecatedExtensions as $extension) {
+                $this->disableExtension($extension);
+            }
+            $this->cli->passthru('brew cleanup php' . $phpversion);
+        }
+
+        if($this->brew->hasTap(self::DEPRECATED_PHP_TAP)){
+            info('[brew] untapping formulae');
+            $this->brew->unTap(self::DEPRECATED_PHP_TAP);
+        }
+    }
+
+    /**
+     * Strips 'php@' from a string or array of strings.
+     *
+     * @param $argument
+     * @return array|mixed
+     */
+    private function sanitizeVersion($argument)
+    {
+        if(is_array($argument)){
+            foreach($argument as $key => $version){
+                $argument[$key] = str_replace('php@', '', $version);
+            }
+        }else{
+            $argument = str_replace('php@', '', $argument);
+        }
+
+
+        return $argument;
     }
 }
