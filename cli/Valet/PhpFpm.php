@@ -98,7 +98,7 @@ class PhpFpm
      */
     function stop()
     {
-        $this->brew->stopService('php56', 'php70', 'php71', 'php72');
+        $this->brew->stopService(Brew::SUPPORTED_PHP_FORMULAE);
     }
 
     /**
