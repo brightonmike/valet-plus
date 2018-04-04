@@ -25,7 +25,8 @@ class Pecl
         ],
         self::APCU_EXTENSION => [
             '7.1' => false,
-            '7.2' => false
+            '7.2' => false,
+            '5.6' => '4.0.11'
         ],
         self::GEOIP_EXTENSION => [
             '7.1' => '1.1.1',
