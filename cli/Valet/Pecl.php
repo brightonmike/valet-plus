@@ -12,6 +12,7 @@ class Pecl
     const APCU_EXTENSION = 'apcu';
     const APCU_BC_EXTENSION = 'apcu_bc';
     const GEOIP_EXTENSION = 'geoip';
+    const MCRYPT_EXTENSION = 'mcrypt';
 
     const APCU_BC_ALIAS = 'apc';
 
@@ -60,15 +61,11 @@ class Pecl
         }
 
         $alias = $this->getExtensionAlias($extension);
-        if (preg_match("/Installing '(.*$alias.so)'/", $result, $matches)) {
-            $phpIniFile = $this->files->get($iniPath);
-            $phpIniFile = preg_replace('/(zend_extension|extension)\="(.*' . $alias . '.so)"/', '$1="' . $matches[1] . '"', $phpIniFile);
-            $phpIniFile = $this->alternativeInstall($extension, $phpIniFile, $result);
-            $this->files->putAsUser($iniPath, $phpIniFile);
-            output("$extension successfully installed");
-        } else {
-            throw new DomainException('Could not find installation path for: ' . $extension);
-        }
+        $phpIniFile = $this->files->get($iniPath);
+        $phpIniFile = $this->replaceIniDefinition($alias, $phpIniFile, $result);
+        $phpIniFile = $this->alternativeInstall($extension, $phpIniFile, $result);
+        $this->files->putAsUser($iniPath, $phpIniFile);
+        output("$extension successfully installed");
     }
 
     function uninstall($extension, $iniPath, $version = null)
@@ -118,7 +115,7 @@ class Pecl
     }
 
     private function replaceIniDefinition($extension, $phpIniFile, $result){
-        if (!preg_match("/Installing '(.*apcu.so)'/", $result, $matches)) {
+        if (!preg_match("/Installing '(.*$extension.so)'/", $result, $matches)) {
             throw new DomainException('Could not find installation path for: ' . $extension);
         }
 
