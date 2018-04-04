@@ -59,16 +59,6 @@ class Brew
     }
 
     /**
-     * Get a list of supported PHP versions
-     *
-     * @return array
-     */
-    function supportedPhpVersions()
-    {
-        return ['php72', 'php71', 'php70', 'php56'];
-    }
-
-    /**
      * Determine if a compatible nginx version is Homebrewed.
      *
      * @return bool
@@ -152,7 +142,8 @@ class Brew
         $services = is_array($services) ? $services : func_get_args();
 
         foreach ($services as $service) {
-            if ($this->installed($service)) {
+            // Brew list doesn't show php@7.2 eventhough it is installed.
+            if ($this->installed($service) || $service === self::PHP_V72_FORMULAE) {
                 info('['.$service.'] Restarting');
 
                 $this->cli->quietly('sudo brew services stop '.$service);
@@ -171,7 +162,8 @@ class Brew
         $services = is_array($services) ? $services : func_get_args();
 
         foreach ($services as $service) {
-            if ($this->installed($service)) {
+            // Brew list doesn't show php@7.2 eventhough it is installed.
+            if ($this->installed($service) || $service === self::PHP_V72_FORMULAE) {
                 info('['.$service.'] Stopping');
 
                 $this->cli->quietly('sudo brew services stop '.$service);
