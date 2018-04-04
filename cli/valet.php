@@ -579,8 +579,18 @@ if (is_dir(VALET_HOME_PATH)) {
     })->descriptions('Configure application connection settings');
 
     $app->command('xdebug [mode] [--remote_autostart=]', function ($input, $mode) {
+        $modes = ['on', 'enable', 'off', 'disable', 'status'];
+
+        if (!in_array($mode, $modes)) {
+            throw new Exception('Mode not found. Available modes: on (enable) / off (disable) / status');
+        }
+
+        if ($mode == '' || $mode == 'status') {
+            Pecl::isInstalled('xdebug');
+            return;
+        }
+
         $restart = false;
-        $isValidMode = false;
         $defaults = $input->getOptions();
         if (isset($defaults['remote_autostart'])) {
             if ($defaults['remote_autostart']) {
@@ -591,34 +601,25 @@ if (is_dir(VALET_HOME_PATH)) {
             $restart = true;
         }
 
-        if ($mode == '' || $mode == 'status') {
-            PhpFpm::isExtensionEnabled('xdebug');
-            $isValidMode = true;
+        $phpVersion = Brew::linkedPhp();
+        $phpIniPath = PhpFpm::phpIniPath();
+
+        if (Pecl::installed('xdebug') === false && ($mode === 'on' || $mode === 'enable')) {
+            info("[php@$phpVersion] Installing xdebug extension");
+            $restart = Pecl::installExtension('xdebug', $phpVersion, $phpIniPath);
+        }elseif($mode === 'on' || $mode === 'enable'){
+            info("[php@$phpVersion] xdebug extension is already installed");
         }
 
-        if ($mode === 'on' || $mode === 'enable') {
-            $change = PhpFpm::enableExtension('xdebug');
-            if ($change) {
-                $restart = true;
-            }
-            $isValidMode = true;
-        }
-
-        if ($mode === 'off' || $mode === 'disable') {
-            $change = PhpFpm::disableExtension('xdebug');
-            if ($change) {
-                $restart = true;
-            }
-            $isValidMode = true;
+        if (Pecl::installed('xdebug') === true && ($mode === 'off' || $mode === 'disable')) {
+            info("[php@$phpVersion] Uninstalling xdebug extension");
+            $restart = Pecl::uninstallExtension('xdebug', $phpVersion, $phpIniPath);
+        }elseif($mode === 'off' || $mode === 'disable'){
+            info("[php@$phpVersion] xdebug extension is already uninstalled");
         }
 
         if ($restart) {
             PhpFpm::restart();
-            return;
-        }
-
-        if (!$isValidMode) {
-            throw new Exception('Mode not found. Available modes: on / off / status');
         }
 
         return;
