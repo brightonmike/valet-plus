@@ -183,9 +183,10 @@ class Brew
      * Determine which version of PHP is linked in Homebrew.
      *
      * @param bool $asFormula
+     *
      * @return string
      */
-    function linkedPhp($asFormula = false)
+    function linkedPhp($asFormula = FALSE)
     {
         if (!$this->files->isLink('/usr/local/bin/php')) {
             throw new DomainException("Unable to determine linked PHP.");
@@ -196,14 +197,16 @@ class Brew
         $versions = self::SUPPORTED_PHP_FORMULAE;
 
         foreach ($versions as $version) {
-            if (!$asFormula) {
-                $version = str_replace('php@', '', $version);
-            }
+            $version = str_replace('php@', '', $version);
+            if (strpos($resolvedPath, $version) !== FALSE) {
+                if ($asFormula) {
+                    $version = 'php@' . $version;
+                }
 
-            if (strpos($resolvedPath, $version) !== false) {
                 return $version;
             }
         }
+
 
         throw new DomainException("Unable to determine linked PHP.");
     }
