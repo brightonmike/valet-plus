@@ -12,7 +12,6 @@ class Pecl
     const APCU_EXTENSION = 'apcu';
     const APCU_BC_EXTENSION = 'apcu_bc';
     const GEOIP_EXTENSION = 'geoip';
-    const MCRYPT_EXTENSION = 'mcrypt';
 
     const APCU_BC_ALIAS = 'apc';
 
@@ -24,13 +23,15 @@ class Pecl
             '5.6' => false
         ],
         self::APCU_EXTENSION => [
-            '7.1' => false,
             '7.2' => false,
+            '7.1' => false,
+            '7.0' => false,
             '5.6' => '4.0.11'
         ],
         self::GEOIP_EXTENSION => [
+            '7.2' => '1.1.1',
             '7.1' => '1.1.1',
-            '7.2' => '1.1.1'
+            '7.0' => '1.1.1'
         ]
     ];
 

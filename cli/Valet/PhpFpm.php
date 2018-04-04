@@ -118,6 +118,7 @@ class PhpFpm
         $confLookup = [
             $this->sanitizeVersion(Brew::PHP_V72_FORMULAE) => '/usr/local/etc/php/7.2/php-fpm.d/www.conf',
             $this->sanitizeVersion(Brew::PHP_V71_FORMULAE) => '/usr/local/etc/php/7.1/php-fpm.d/www.conf',
+            $this->sanitizeVersion(Brew::PHP_V70_FORMULAE) => '/usr/local/etc/php/7.0/php-fpm.d/www.conf',
             $this->sanitizeVersion(Brew::PHP_V56_FORMULAE) => '/usr/local/etc/php/5.6/php-fpm.conf',
         ];
 
@@ -148,10 +149,10 @@ class PhpFpm
         $this->cli->passthru('sudo ln -s /usr/local/Cellar/jpeg/8d/lib/libjpeg.8.dylib /usr/local/opt/jpeg/lib/libjpeg.8.dylib');
 
         if (!$this->brew->installed('php@' . $version)) {
-            $this->brew->ensureInstalled('php@' . $version, ['--force']);
+            $this->brew->ensureInstalled('php@' . $version);
         }
 
-        $this->cli->passthru('brew link php@' . $version.' --force');
+        $this->cli->passthru('brew link php@' . $version.' --force --overwrite');
         $this->stop();
         $this->install();
         return true;
