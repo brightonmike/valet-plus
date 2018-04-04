@@ -458,7 +458,7 @@ if (is_dir(VALET_HOME_PATH)) {
     /**
      * Fix common problems
      */
-    $app->command('fix', function ($phpVersion) {
+    $app->command('fix', function () {
         PhpFpm::fix();
     })->descriptions('Switch between versions of PHP');
 
