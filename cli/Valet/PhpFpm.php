@@ -6,7 +6,7 @@ use DomainException;
 
 class PhpFpm
 {
-    var $brew, $cli, $files;
+    var $brew, $cli, $files, $pecl;
 
     const DEPRECATED_PHP_TAP = 'homebrew/php';
 
@@ -17,11 +17,12 @@ class PhpFpm
      * @param  CommandLine $cli
      * @param  Filesystem $files
      */
-    function __construct(Brew $brew, CommandLine $cli, Filesystem $files)
+    function __construct(Brew $brew, CommandLine $cli, Filesystem $files, Pecl $pecl)
     {
         $this->cli = $cli;
         $this->brew = $brew;
         $this->files = $files;
+        $this->pecl = $pecl;
     }
 
     /**
@@ -35,9 +36,11 @@ class PhpFpm
             $this->brew->ensureInstalled(Brew::PHP_V71_FORMULAE);
         }
 
+        $version = $this->brew->linkedPhp();
+
         $this->files->ensureDirExists('/usr/local/var/log', user());
         $this->updateConfiguration();
-//        $this->installExtensions();
+        $this->pecl->installExtensions($version, $this->getPhpIniPath());
         $this->restart();
     }
 
@@ -71,6 +74,10 @@ class PhpFpm
         $iniPath = $this->iniPath();
         $this->files->ensureDirExists($iniPath, user());
         $this->files->putAsUser($this->iniPath().'z-performance.ini', $contents);
+    }
+
+    function getPhpIniPath(){
+        return str_replace('/conf.d/', '/php.ini', $this->iniPath());
     }
 
     function iniPath() {
@@ -135,6 +142,8 @@ class PhpFpm
             return false;
         }
 
+        $this->pecl->uninstallExtensions($currentVersion, $this->getPhpIniPath());
+
         $this->cli->passthru('brew unlink php@' . $currentVersion);
         $this->cli->passthru('sudo ln -s /usr/local/Cellar/jpeg/8d/lib/libjpeg.8.dylib /usr/local/opt/jpeg/lib/libjpeg.8.dylib');
 
@@ -150,7 +159,7 @@ class PhpFpm
 
     function enableExtension($extension) {
         $currentPhpVersion = $this->brew->linkedPhp();
-        
+
         if(!$this->brew->installed($currentPhpVersion.'-'.$extension)) {
             $this->brew->ensureInstalled($currentPhpVersion.'-'.$extension);
         }
