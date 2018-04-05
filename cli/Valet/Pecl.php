@@ -17,7 +17,8 @@ class Pecl
 
     const EXTENSIONS = [
         self::XDEBUG_EXTENSION => [
-            '5.6' => '2.2.7'
+            '5.6' => '2.2.7',
+            'default' => false
         ],
         self::APCU_BC_EXTENSION => [
             '5.6' => false
@@ -47,6 +48,14 @@ class Pecl
     {
         $this->cli = $cli;
         $this->files = $files;
+    }
+
+    function isInstalled($extension){
+        if($this->installed($extension)){
+            info("$extension is installed");
+        }else{
+            info("$extension is not installed");
+        }
     }
 
     function installed($extension)
@@ -89,22 +98,38 @@ class Pecl
     {
         info("[php@$phpVersion] Removing extensions");
         foreach (self::EXTENSIONS as $extension => $versions) {
-            $version = $this->getVersion($extension, $phpVersion);
-            if ($this->installed($extension)) {
-                $this->uninstall($extension, $iniPath, $version);
-            }
+            $this->uninstallExtension($extension, $phpVersion, $iniPath);
         }
     }
 
-    function installExtensions($phpVersion, $iniPath)
+    function uninstallExtension($extension, $phpVersion, $iniPath){
+        $version = $this->getVersion($extension, $phpVersion);
+        if ($this->installed($extension)) {
+            $this->uninstall($extension, $iniPath, $version);
+            return true;
+        }
+        return false;
+    }
+
+    function installExtensions($phpVersion, $iniPath, $onlyDefaults = true)
     {
         info("[php@$phpVersion] Installing extensions");
         foreach (self::EXTENSIONS as $extension => $versions) {
-            $version = $this->getVersion($extension, $phpVersion);
-            if (!$this->installed($extension) && $version !== false) {
-                $this->install($extension, $iniPath, $version);
+            if($onlyDefaults && $this->isDefaultExtension($extension) === false){
+                continue;
             }
+
+            $this->installExtension($extension, $phpVersion, $iniPath);
         }
+    }
+
+    function installExtension($extension, $phpVersion, $iniPath){
+        $version = $this->getVersion($extension, $phpVersion);
+        if (!$this->installed($extension) && $version !== false) {
+            $this->install($extension, $iniPath, $version);
+            return true;
+        }
+        return false;
     }
 
     private function alternativeInstall($extension, $phpIniFile, $result){
@@ -128,6 +153,16 @@ class Pecl
         $phpIniFile = preg_replace('/(zend_extension|extension)\="(.*'.$extension.'.so)"/', '', $phpIniFile);
 
         return $iniMatches[1].'="' . $matches[1] . '"'.$phpIniFile;
+    }
+
+    private function isDefaultExtension($extension){
+        if (array_key_exists('default', self::EXTENSIONS[$extension])) {
+            return self::EXTENSIONS[$extension]['default'];
+        }elseif(array_key_exists('default', self::EXTENSIONS[$extension]) === false){
+            return true;
+        }else{
+            return false;
+        }
     }
 
     private function getExtensionAlias($extension){

@@ -40,7 +40,7 @@ class PhpFpm
 
         $this->files->ensureDirExists('/usr/local/var/log', user());
         $this->updateConfiguration();
-        $this->pecl->installExtensions($version, $this->getPhpIniPath());
+        $this->pecl->installExtensions($version, $this->phpIniPath());
         $this->restart();
     }
 
@@ -76,7 +76,7 @@ class PhpFpm
         $this->files->putAsUser($this->iniPath().'z-performance.ini', $contents);
     }
 
-    function getPhpIniPath(){
+    function phpIniPath(){
         return str_replace('/conf.d/', '/php.ini', $this->iniPath());
     }
 
@@ -143,7 +143,7 @@ class PhpFpm
             return false;
         }
 
-        $this->pecl->uninstallExtensions($currentVersion, $this->getPhpIniPath());
+        $this->pecl->uninstallExtensions($currentVersion, $this->phpIniPath());
 
         $this->cli->passthru('brew unlink php@' . $currentVersion);
         $this->cli->passthru('sudo ln -s /usr/local/Cellar/jpeg/8d/lib/libjpeg.8.dylib /usr/local/opt/jpeg/lib/libjpeg.8.dylib');
