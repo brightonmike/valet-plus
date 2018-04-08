@@ -46,6 +46,7 @@ $app->command('install [--with-mariadb]', function ($withMariadb) {
 
     Configuration::install();
     Nginx::install();
+    PhpFpm::fix();
     PhpFpm::install();
     DnsMasq::install();
     Mysql::install($withMariadb ? 'mariadb' : 'mysql');
@@ -453,13 +454,6 @@ if (is_dir(VALET_HOME_PATH)) {
             return;
         }
         info('Valet is now using php@'.$phpVersion.'.');
-    })->descriptions('Switch between versions of PHP');
-
-    /**
-     * Fix common problems
-     */
-    $app->command('fix', function () {
-        PhpFpm::fix();
     })->descriptions('Switch between versions of PHP');
 
     /**

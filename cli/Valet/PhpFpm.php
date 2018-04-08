@@ -248,6 +248,32 @@ class PhpFpm
      * Fixes common problems with php installations from Homebrew.
      */
     function fix(){
+        // Check for errors within the installation of php.
+        info('[php] Checking for errors within the php installation...');
+        if($this->brew->installed('php56') === false &&
+            $this->brew->installed('php70') === false &&
+            $this->brew->installed('php71') === false &&
+            $this->brew->installed('php72') === false &&
+            $this->files->exists('/usr/local/etc/php/5.6/ext-intl.ini') === false &&
+            $this->files->exists('/usr/local/etc/php/5.6/ext-mcrypt.ini') === false &&
+            $this->files->exists('/usr/local/etc/php/5.6/ext-apcu.ini') === false &&
+            $this->files->exists('/usr/local/etc/php/7.0/ext-intl.ini') === false &&
+            $this->files->exists('/usr/local/etc/php/7.0/ext-mcrypt.ini') === false &&
+            $this->files->exists('/usr/local/etc/php/7.0/ext-apcu.ini') === false &&
+            $this->files->exists('/usr/local/etc/php/7.1/ext-intl.ini') === false &&
+            $this->files->exists('/usr/local/etc/php/7.1/ext-mcrypt.ini') === false &&
+            $this->files->exists('/usr/local/etc/php/7.1/ext-apcu.ini') === false &&
+            $this->files->exists('/usr/local/etc/php/7.2/ext-intl.ini') === false &&
+            $this->files->exists('/usr/local/etc/php/7.2/ext-mcrypt.ini') === false &&
+            $this->files->exists('/usr/local/etc/php/7.2/ext-apcu.ini') === false &&
+            $this->brew->hasTap(self::DEPRECATED_PHP_TAP) === false
+        ){
+            // No errors found return, do not run fix logic.
+            info('[php] No errors found! Resuming installation...');
+            return;
+        }
+
+
         // Remove old homebrew/php tap packages.
         info('Removing all old php56- packages from homebrew/php tap');
         $this->cli->passthru('brew list | grep php56- | xargs brew uninstall');
