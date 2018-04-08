@@ -46,7 +46,7 @@ class DevTools
      */
     function install()
     {
-        $tools = ['wp-cli', 'n98-magerun', 'n98-magerun2', 'pv'];
+        $tools = ['wp-cli', 'pv'];
         info('[devtools] Installing');
 
         foreach($tools as $tool) {
@@ -54,14 +54,6 @@ class DevTools
                 info('[devtools] '.$tool.' already installed');
             } else {
                 $this->brew->ensureInstalled($tool, [], $this->taps);
-            }
-
-            if($tool === 'n98-magerun') {
-                $this->files->symlinkAsUser('/usr/local/bin/n98-magerun', '/usr/local/bin/magerun');
-            }
-
-            if($tool === 'n98-magerun') {
-                $this->files->symlinkAsUser('/usr/local/bin/n98-magerun2', '/usr/local/bin/magerun2');
             }
         }
     }
