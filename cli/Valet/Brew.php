@@ -135,6 +135,32 @@ class Brew
     }
 
     /**
+     * Untap the given formulas.
+     *
+     * @param  dynamic[string]  $formula
+     * @return void
+     */
+    function unTap($formulas)
+    {
+        $formulas = is_array($formulas) ? $formulas : func_get_args();
+
+        foreach ($formulas as $formula) {
+            $this->cli->passthru('sudo -u '.user().' brew untap '.$formula);
+        }
+    }
+
+    /**
+     * Check if brew has the given tap.
+     *
+     * @param $formula
+     * @return bool
+     */
+    function hasTap($formula)
+    {
+        return strpos($this->cli->runAsUser("brew tap | grep $formula"), $formula) !== false;
+    }
+
+    /**
      * Restart the given Homebrew services.
      *
      * @param
