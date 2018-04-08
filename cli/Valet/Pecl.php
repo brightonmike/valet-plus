@@ -161,7 +161,7 @@ class Pecl
         // Download and unzip
         $this->cli->passthru("cd /tmp && curl -O $url");
 
-        // Unpackage the file using file extension
+        // Unpackage the file using file extension.
         $fileExtension = $this->getFileExtension($extension);
         switch ($fileExtension) {
             case self::TAR_GZ_FILE_EXTENSION:
@@ -181,7 +181,9 @@ class Pecl
             throw new DomainException("$extensionAlias could not be found!");
         }
 
-        // TODO: Remove files from /tmp
+        // Remove artifacts from /tmp folder.
+        $this->cli->runAsUser("rm /tmp/$fileName");
+        $this->cli->runAsUser("rm -r /tmp/$unpackagedDirectory/$extensionAlias $extensionDirectory");
     }
 
     function uninstall($extension, $version = null)
