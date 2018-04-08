@@ -582,7 +582,7 @@ if (is_dir(VALET_HOME_PATH)) {
         $modes = ['on', 'enable', 'off', 'disable', 'status'];
 
         if (!in_array($mode, $modes)) {
-            throw new Exception('Mode not found. Available modes: on (enable) / off (disable) / status');
+            throw new Exception('Mode not found. Available modes: '.implode(', ', $modes));
         }
 
         if ($mode == '' || $mode == 'status') {
@@ -602,18 +602,17 @@ if (is_dir(VALET_HOME_PATH)) {
         }
 
         $phpVersion = Brew::linkedPhp();
-        $phpIniPath = PhpFpm::phpIniPath();
 
         if (Pecl::installed('xdebug') === false && ($mode === 'on' || $mode === 'enable')) {
             info("[php@$phpVersion] Installing xdebug extension");
-            $restart = Pecl::installExtension('xdebug', $phpVersion, $phpIniPath);
+            $restart = Pecl::installExtension('xdebug', $phpVersion);
         }elseif($mode === 'on' || $mode === 'enable'){
             info("[php@$phpVersion] xdebug extension is already installed");
         }
 
         if (Pecl::installed('xdebug') === true && ($mode === 'off' || $mode === 'disable')) {
             info("[php@$phpVersion] Uninstalling xdebug extension");
-            $restart = Pecl::uninstallExtension('xdebug', $phpVersion, $phpIniPath);
+            $restart = Pecl::uninstallExtension('xdebug', $phpVersion);
         }elseif($mode === 'off' || $mode === 'disable'){
             info("[php@$phpVersion] xdebug extension is already uninstalled");
         }
@@ -626,24 +625,34 @@ if (is_dir(VALET_HOME_PATH)) {
     })->descriptions('Enable / disable Xdebug');
 
     $app->command('ioncube [mode]', function ($mode) {
+        $modes = ['on', 'enable', 'off', 'disable', 'status'];
+
+        if (!in_array($mode, $modes)) {
+            throw new Exception('Mode not found. Available modes: '.implode(', ', $modes));
+        }
+
+        $phpVersion = Brew::linkedPhp();
+
         if ($mode == '' || $mode == 'status') {
-            PhpFpm::isExtensionEnabled('ioncubeloader');
+            Pecl::isInstalled('ioncube_loader_dar');
             return;
         }
 
-        if ($mode === 'on' || $mode === 'enable') {
-            PhpFpm::enableExtension('ioncubeloader');
+        if (Pecl::installed('ioncube_loader_dar') === false && ($mode === 'on' || $mode === 'enable')) {
+            info("[php@$phpVersion] Installing ioncube_loader_dar extension");
+            $restart = Pecl::installExtension('ioncube_loader_dar');
             PhpFpm::restart();
-            return;
+        }elseif($mode === 'on' || $mode === 'enable'){
+            info("[php@$phpVersion] ioncube_loader_dar extension is already installed");
         }
 
-        if ($mode === 'off' || $mode === 'disable') {
-            PhpFpm::disableExtension('ioncubeloader');
+        if (Pecl::installed('ioncube_loader_dar') === true && ($mode === 'off' || $mode === 'disable')) {
+            info("[php@$phpVersion] Uninstalling ioncube_loader_dar extension");
+            $restart = Pecl::uninstallExtension('ioncube_loader_dar');
             PhpFpm::restart();
-            return;
+        }elseif($mode === 'off' || $mode === 'disable'){
+            info("[php@$phpVersion] ioncube_loader_dar extension is already uninstalled");
         }
-
-        throw new Exception('Mode not found. Available modes: on / off / status');
     })->descriptions('Enable / disable ioncube');
 
     $app->command('elasticsearch [mode]', function ($mode) {
